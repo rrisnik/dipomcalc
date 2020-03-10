@@ -1,0 +1,1160 @@
+#-*- coding: UTF-8 -*-
+
+import numpy as np
+from random import *
+from math import *
+from scipy import *
+from tkinter import *
+import sys
+
+def sair():
+	sys.exit(0)
+
+def dist(c1, c2):
+	#Aqui, receberemos o vetor c1 com as coordenadas do átomo 1 e um vetor c2 com as coordenadas do átomo 2
+
+	distancia = sqrt(((c1[0] - c2[0])**2) + ((c1[1] - c2[1])**2) + ((c1[2] - c2[2])**2))
+
+	return distancia
+
+def angu(c1, c2, c3):
+	#Aqui, recebemos o vetor c1 com as coordenadas do átomo 1, c2 com as coordenadas do átomo 2 e c3 com as do átomo 3. Sabendo que o átomo 2 é o central, calculemos o ângulo entre os vetores c2c1 e c2c3
+
+	c2c1 = []
+	c2c1.append(c1[0] - c2[0])
+	c2c1.append(c1[1] - c2[1])
+	c2c1.append(c1[2] - c2[2])
+	
+	c2c3 = []
+	c2c3.append(c3[0] - c2[0])
+	c2c3.append(c3[1] - c2[1])
+	c2c3.append(c3[2] - c2[2])
+
+	n21 = ((c2c1[0]**2) + (c2c1[1]**2) + (c2c1[2])**2)**(1/2)
+	n23 = ((c2c3[0]**2) + (c2c3[1]**2) + (c2c3[2])**2)**(1/2)
+
+	dotprd = c2c1[0]*c2c3[0] + c2c1[1]*c2c3[1] + c2c1[2]*c2c3[2]
+
+	ang = acos(dotprd/(n21*n23))
+
+	return ang	
+
+def calcula_cargas(cm, n):
+	#Aqui, recebemos a matriz guia com os dados posicionais dos átomos e o número de átomos da molécula e calculamos as cargas parciais por meio do método EEM
+
+	kappa = 0.2509
+	
+	#Criemos uma matriz de zeros
+
+	mat1 = np.zeros((n + 1, n + 1))
+	mat2 = np.zeros((n + 1, 1))
+
+	for lin in range(n + 1):
+		for col in range(n + 1):
+			if lin == col and lin != n:
+				if cm[lin][0] == 'c3': #Tipo C1
+					mat1[lin][col] = 0.3220
+					mat2[lin][0] = -2.4992
+				if cm[lin][0] == 'c2' or cm[lin][0] == 'ca' or cm[lin][0] == 'c': #Tipo C2
+					mat1[lin][col] = 0.3173
+					mat2[lin][0] = -2.5065
+				if cm[lin][0] == 'c1': #Tipo C3
+					mat1[lin][col] = 0.3489
+					mat1[lin][0] = -2.4617
+
+				if cm[lin][0] == 'hc' or cm[lin][0] == 'ha' or cm[lin][0] == 'hn' or cm[lin][0] == 'hn' or cm[lin][0] == 'ho' or cm[lin][0] == 'hs' or cm[lin][0] == 'hp': #Tipo H
+					mat1[lin][col] = 0.6581
+					mat2[lin][0] = -2.3864
+
+				if cm[lin][0] == 'n' or cm[lin][0] == 'n3' or cm[lin][0] == 'n4' or cm[lin][0] == 'na' or cm[lin][0] == 'nh': #Tipo N1
+					mat1[lin][col] = 0.4072
+					mat2[lin][0] = -2.5891
+				if cm[lin][0] == 'n2' or cm[lin][0] == 'no': #Tipo N2
+					mat1[lin][col] = 0.2949
+					mat2[lin][0] = -2.5568
+				if cm[lin][0] == 'n1': #Tipo N3
+					mat1[lin][col] = 0.4025
+					mat2[lin][0] = -2.5348
+
+				if cm[lin][0] == 'oh' or cm[lin][0] == 'os': #Tipo O1
+					mat1[lin][col] = 0.4041
+					mat2[lin][0] = -2.6342
+				if cm[lin][0] == 'o': #Tipo O2
+					mat1[lin][col] = 0.4232
+					mat2[lin][0] = -2.6588
+
+				if cm[lin][0] == 'f':
+					mat1[lin][col] = 1.2433
+					mat2[lin][0] = -3.0028
+
+				if cm[lin][0] == 'sh' or cm[lin][0] == 'ss' or cm[lin][0] == 's4' or cm[lin][0] == 's6': #Tipo S1
+					mat1[lin][col] = 0.2404
+					mat2[lin][0] = -2.4506
+				if cm[lin][0] == 's2': #Tipo S2
+					mat1[lin][col] = 0.2043
+					mat2[lin][0] = -2.4884
+
+				if cm[lin][0] == 'cl':
+					mat1[lin][col] = 0.8364
+					mat2[lin][0] = -2.5104
+
+				if cm[lin][0] == 'br':
+					mat1[lin][col] = 0.7511
+					mat2[lin][0] = -2.4244
+
+				if cm[lin][0] == 'i':
+					mat1[lin][col] = 0.9303
+					mat2[lin][0] = -2.3272
+
+				if cm[lin][0] == 'p3' or cm[lin][0] == 'p4' or cm[lin][0] == 'p5': #Tipo P1
+					mat1[lin][col] = 0.1902
+					mat2[lin][0] = -2.3898
+				if cm[lin][0] == 'p2': #Tipo P2
+					mat1[lin][col] = 0.3281
+					mat2[lin][0] = -2.2098
+
+			elif col < n and lin < n:
+				mat1[lin][col] = kappa/(dist(cm[lin][2:5], cm[col][2:5]))
+
+			elif lin < n and col == n:
+				mat1[lin][col] = -1.0
+
+			elif col < n and lin == n:
+				mat1[lin][col] = 1.0
+
+			elif lin == n and col == n:
+				mat1[lin][col] = 0.0
+				mat2[lin][0] = 0.0 #Devemos mudar aqui para adicionar carga a molécula
+
+	mat1inv = np.mat(mat1).I
+	car = np.mat(mat1inv)*np.mat(mat2)
+	car = car.tolist()
+
+	carl = []
+	param = 1.0
+	for lin in range(len(car) - 1):
+		carl.append(param*car[lin][0])
+
+	print(carl)
+	return carl
+
+def gera14(inda, ang, nuat):
+	#Essa função gera todos os pares 1-4 para interações não ligadas
+	possiveis = []
+	for lin in range(inda + 1, nuat + 1):
+		if lin != inda:
+			possiveis.append(lin)
+
+	#Excluamos agora os átomos que pertencem a interações de ângulo comuns
+	for lin in range(len(ang)):
+		if ang[lin][0] == inda:
+			for j in range(len(possiveis)):
+				if possiveis[j] == ang[lin][1]:
+					possiveis[j] = 0
+
+				if possiveis[j] == ang[lin][2]:
+					possiveis[j] = 0
+
+		elif ang[lin][1] == inda:
+			for j in range(len(possiveis)):
+				if possiveis[j] == ang[lin][0]:
+					possiveis[j] = 0
+				
+				if possiveis[j] == ang[lin][2]:
+					possiveis[j] = 0
+
+		elif ang[lin][2] == inda:
+			for j in range(len(possiveis)):
+				if possiveis[j] == ang[lin][0]:
+					possiveis[j] = 0
+			
+				if possiveis[j] == ang[lin][1]:
+					possiveis[j] = 0
+
+	while 0 in possiveis:
+		possiveis.remove(0)
+
+	#Construamos agora uma matriz com as interações 1-4 do átomo de indice inda
+	inter14 = []
+	for lin in range(len(possiveis)):
+		lini = []
+		lini.append(inda)
+		lini.append(possiveis[lin])
+
+		inter14.append(lini)
+
+	return inter14
+			
+def paramnonbond(tipatom, naolig):
+	#Esta função encontra os parâmetros não ligados do átomo tipatom e retorna os parâmetros nas unidades corretas
+
+	for lin in range(len(naolig)):
+		if tipatom == naolig[lin]:
+			r = float(naolig[lin+1])
+			eps = float(naolig[lin+2])
+
+	eps = eps*4.184
+
+	return r, eps
+
+def pe_ener(mcoord, lig, ang, naolig):
+	#Esta função calcula a energia potencial do sistema baseando-se nos parâmetros do campo de forças GAFF e nas forças de Coulomb. A energia é calculada em eV. Na matriz mcoord estão as coordenadas de cada átomo e as cargas e na matriz lig estão os parâmetros de cada ligação química e de cada interação angular
+
+	coul = 2.30707725e-21 #Unidades: kJ*angstrom*e**-2
+	ener = 0
+
+	#Calculemos a energia das ligaçoes:
+	for lin in range(len(lig)):
+		c1 = []
+		c2 = []
+		c1.append(mcoord[lig[lin][3]-1][2])
+		c1.append(mcoord[lig[lin][3]-1][3])
+		c1.append(mcoord[lig[lin][3]-1][4])
+		c2.append(mcoord[lig[lin][4]-1][2])
+		c2.append(mcoord[lig[lin][4]-1][3])
+		c2.append(mcoord[lig[lin][4]-1][4])
+		d = dist(c1, c2)
+
+		ener = ener + lig[lin][1]*((d - lig[lin][2])**2)
+
+	#Calculemos a energia dos ângulos
+	for lin in range(len(ang)):
+		c1 = []
+		c2 = []
+		c3 = []
+		c1.append(mcoord[ang[lin][3]-1][2])
+		c1.append(mcoord[ang[lin][3]-1][3])
+		c1.append(mcoord[ang[lin][3]-1][4])
+		c2.append(mcoord[ang[lin][4]-1][2])
+		c2.append(mcoord[ang[lin][4]-1][3])
+		c2.append(mcoord[ang[lin][4]-1][4])
+		c3.append(mcoord[ang[lin][5]-1][2])
+		c3.append(mcoord[ang[lin][5]-1][3])
+		c3.append(mcoord[ang[lin][5]-1][4])
+		a = angu(c1, c2, c3)
+
+		ener = ener + ang[lin][1]*((a - ang[lin][2])**2)
+
+	#Calculemos a energia não ligada
+	for lin in range(len(naolig)):
+		c1 = []
+		c2 = []
+		c1.append(mcoord[naolig[lin][0]-1][2])
+		c1.append(mcoord[naolig[lin][0]-1][3])
+		c1.append(mcoord[naolig[lin][0]-1][4])
+		c2.append(mcoord[naolig[lin][1]-1][2])
+		c2.append(mcoord[naolig[lin][1]-1][3])
+		c2.append(mcoord[naolig[lin][1]-1][4])
+		d = dist(c1, c2)
+
+		q1 = mcoord[naolig[lin][0]-1][5]
+		q2 = mcoord[naolig[lin][1]-1][5]
+
+		ener = ener + (coul*q1*q2/d) + (naolig[lin][2]/(d**12)) - (naolig[lin][3]/(d**6))		
+
+	return ener
+
+def min_mc(mcoord, lig, ang, naolig, nuat):
+	#Esta função recebe a matriz de coordenadas com os tipos atômicos segundo o GAFF e as cargas, a matriz de ligações químicas para minimizar a energia da estrutura a partir de uma simulação monte carlo e o número de átomos
+
+	N = numb.get() #Número de iterações
+	Neq = numbequil.get() #Número de iterações descartadas para a equilibração geométrica
+	T = 1 #Temperatura termodinâmica considerada
+	k = 0 #Contador de passos aceitos
+
+	#Dupliquemos a matriz mcoord para que consigamos manipular uma atual e uma próxima
+	mcoordatual = []
+	mcoordprox = []
+	modd1 = 0
+	modd2 = 0
+	modd3 = 0
+	moddm = 0
+	passo = 0
+
+	for lin in range(len(mcoord)):
+		lini = []
+		for col in range(len(mcoord[0])):
+				lini.append(mcoord[lin][col])
+
+		mcoordatual.append(lini)
+		mcoordprox.append(lini)
+
+	#Precisamos marcar um átomo para a referência da base, como convenção, marquemos sempre o primeiro carbono encontrado, na ausência de átomos de carbono, procuremos por, nessa ordem, oxigênios, nitrogênios, enxofres, fósforos.
+
+	atomref = 0
+	for lin in range(len(mcoordatual)):
+		if mcoordatual[lin][0] == 'c' or mcoordatual[lin][0] == 'c1' or mcoordatual[lin][0] == 'c2' or mcoordatual[lin][0] == 'c3' or mcoordatual[lin][0] == 'ca':
+			atomref = mcoordatual[lin][1] #Guardando o índice do átomo refência
+			break #Parando o loop para que o primeiro encontrado seja o marcado
+
+	if atomref == 0:
+		for lin in range(len(mcoordatual)):
+			if mcoordatual[lin][0] == 'o' or mcoordatual[lin][0] == 'oh' or mcoordatual[lin][0] == 'os':
+				atomref = mcoordatual[lin][1] #Guardando o índice do átomo referência
+				break
+
+	if atomref == 0:
+		for lin in range(len(mcoordatual)):
+			if mcoordatual[lin][0] == 'n' or mcoordatual[lin][0] == 'n1' or mcoordatual[lin][0] == 'n2' or mcoordatual[lin][0] == 'n3' or mcoordatual[lin][0] == 'n4' or mcoordatual[lin][0] == 'na' or mcoordatual[lin][0] == 'nh' or mcoordatual[lin][0] == 'no':
+				atomref = mcoordatual[lin][1]
+				break
+
+	if atomref == 0:
+		for lin in range(len(mcoordatual)):
+			if mcoordatual[lin][0] == 's2' or mcoordatual[lin][0] == 'sh' or mcoordatual[lin][0] == 'ss' or mcoordatual[lin][0] == 's4' or mcoordatual[lin][0] == 's6':
+				atomref = mcoordatual[lin][1]
+				break
+
+	if atomref == 0:
+		for lin in range(len(mcoordatual)):
+			if mcoordatual[lin][0] == 'p2' or mcoordatual[lin][0] == 'p3' or mcoordatual[lin][0] == 'p4' or mcoordatual[lin][0] == 'p5':
+				atomref = mcoordatual[lin][1]
+				break
+
+	#Agora que já temos referenciado um átomo, definamos o eixo das abscissas em relação a um dos ligantes deste átomo. Para isso, identifiquemos a primeira ligação em que ele aparece na matriz lig
+	
+	xaxis = 0
+	for lin in range(len(lig)):
+		if lig[lin][3] == atomref:
+			xaxis = lig[lin][4]
+			break
+
+		elif lig[lin][4] == atomref:
+			xaxis = lig[lin][3]
+			break
+
+	#Com os dois referenciados, podemos agora gerar a base ortonormal
+			
+
+	for cont in range(N):
+		j = random.randint(1, nuat) #Sorteia o átomo que tentaremos mover
+		dx = random.random()*0.2 - 0.1
+		dy = random.random()*0.2 - 0.1
+		dz = random.random()*0.2 - 0.1
+
+		#Atualizemos a agora a matriz próxima com as novas posições do átomo j
+		mcoordprox[j-1][2] = mcoordprox[j-1][2] + dx
+		mcoordprox[j-1][3] = mcoordprox[j-1][3] + dy
+		mcoordprox[j-1][4] = mcoordprox[j-1][4] + dz
+
+		#Calculemos a energia da matriz atual e da próxima
+		peatual = pe_ener(mcoordatual, lig, ang, naolig)
+		peprox = pe_ener(mcoordprox, lig, ang, naolig)
+
+		deltape = peprox - peatual
+		w = exp(-deltape*T)
+		#u = random.random() #Sorteia um número entre 0 e 1
+		
+		if 1 < w:
+			k = k + 1 #O movimento é aceito
+			del mcoordatual
+			mcoordatual = []
+			for lin in range(len(mcoordprox)):
+				lini = []
+				for col in range(len(mcoordprox[0])):
+					lini.append(mcoordprox[lin][col])
+				mcoordatual.append(lini)
+
+			cargas = calcula_cargas(mcoordatual, nuat)
+
+			for lin in range(len(mcoordatual)):
+				mcoordatual[lin][5] = cargas[lin]
+			
+
+		else:
+			del mcoordprox #O movimento não é aceito
+			mcoordprox = []
+			for lin in range(len(mcoordatual)):
+				lini = []
+				for col in range(len(mcoordatual[0])):
+					lini.append(mcoordatual[lin][col])
+				mcoordprox.append(lini)
+
+		modd1loc = 0
+		modd2loc = 0
+		modd3loc = 0
+
+		if cont >= Neq:
+			passo = passo + 1
+			for lin in range(len(mcoordatual)):
+				modd1 = modd1 + mcoordatual[lin][2]*mcoordatual[lin][5]
+				modd2 = modd2 + mcoordatual[lin][3]*mcoordatual[lin][5]
+				modd3 = modd3 +	mcoordatual[lin][4]*mcoordatual[lin][5]
+
+				modd1loc = modd1loc + mcoordatual[lin][2]*mcoordatual[lin][5]
+				modd2loc = modd2loc + mcoordatual[lin][3]*mcoordatual[lin][5]
+				modd3loc = modd3loc + mcoordatual[lin][4]*mcoordatual[lin][5]
+
+			moddm = moddm + (((modd1loc**2) + (modd2loc**2) + (modd3loc**2))**(1/2))
+
+	dipmo = []
+	dipmo.append(modd1/passo)
+	dipmo.append(modd2/passo)
+	dipmo.append(modd3/passo)
+	moddm = moddm/passo
+
+	print(k)
+	return mcoordatual, dipmo, moddm
+
+def identificaH(inda, indm, liga, ligc):
+	#O hidrogênio faz sempre apenas uma ligação, portanto, basta identificar esta ligação, caso a ligação seja a um carbono, precisamos ainda identificar se trata-se de um carbono aromático ou não. Para isso, basta que encontremos o índice do hidrogênio em questão na matriz liga e depois verifiquemos com quem ele está ligado.
+
+	for lin in range(len(liga)):
+		for col in (range(len(liga[0]) - 1)):
+			if liga[lin][col] == inda:
+				if col == 0:
+					ligante1 = liga[lin][col+1]
+					ordem1 = liga[lin][col+2]
+				elif col == 1:
+					ligante1 = liga[lin][col-1]
+					ordem1 = liga[lin][col+1]
+
+	
+	#Identifiquemos os ligantes
+	for lin in range(len(indm)):
+		if ligante1 == indm[lin][1]:
+			lig1 = indm[lin][0]
+	
+	tipoH = ''	
+
+	if lig1 == 'C':
+		for lin in range(len(ligc)):
+			for col in range(len(ligc[0])):
+				tipo = ligc[lin][0]
+				if ligante1 == ligc[lin][col]:
+					if tipo == 'A':
+						tipoH = 'ha'
+					elif tipo == 'B':
+						tipoH = 'hc'
+
+		if tipoH == '':
+			tipoH = 'hc'
+
+	if lig1 == 'N':
+		tipoH = 'hn'
+
+	if lig1 == 'O':
+		tipoH = 'ho'
+
+	if lig1 == 'S':
+		tipoH = 'hs'
+
+	if lig1 == 'P':
+		tipoH = 'hp'
+
+	return tipoH
+
+def identificaP(inda, indm, liga, ligc):
+	#O fósforo pode ser discernido entre todos os tipos a partir do tipo de ligação que faz. Construamos uma matriz com as ligações do fósforo.
+	ligP = []
+	
+	for lin in (range(len(liga))):
+		for col in (range(len(liga[0]) - 1)):
+			lip = []
+			if liga[lin][col] == inda:
+				if col == 0:
+					lip.append(liga[lin][col+1])
+					lip.append(liga[lin][col+2])
+
+				elif col == 1:
+					lip.append(liga[lin][col-1])
+					lip.append(liga[lin][col+1])
+
+				ligP.append(lip)
+
+	#Identifiquemos os ligantes
+	for lin in range(len(ligP)):
+		for lil in range(len(indm)):
+			if ligP[lin][0] == indm[lil][1]:
+				ligP[lin][0] = indm[lil][0]
+
+	tipoP = ''
+
+	for lin in range(len(ligP)):
+		if ligP[lin][0] == 'C' and ligP[lin][1] == 2:
+			tipoP = 'p2'
+
+	#Quantidade de ligações
+	ordem = len(ligP)
+
+	if ordem == 3:
+		tipoP == 'p3'
+	elif ordem == 4:
+		tipoP == 'p5'
+
+	return tipoP
+
+def identificaS(inda, indm, liga, ligc):
+	#O enxofre pode ser discernido tanto pelo tipo de ligação quanto pelo tipo de ligante. Construamos, novamente, uma matriz com as ligações do enxofre.
+	ligS = []
+	
+	for lin in (range(len(liga))):
+		for col in (range(len(liga[0]) - 1)):
+			lis = []
+			if liga[lin][col] == inda:
+				if col == 0:
+					lis.append(liga[lin][col+1])
+					lis.append(liga[lin][col+2])
+				if col == 1:
+					lis.append(liga[lin][col-1])
+					lis.append(liga[lin][col+1])
+
+				ligS.append(lis)
+
+	#Identifiquemos os ligantes
+	for lin in range(len(ligS)):
+		for lil in range(len(indm)):
+			if ligS[lin][0] == indm[lil][1]:
+				ligS[lin][0] = indm[lil][0]
+
+	#Quantidade de ligações
+	ordem = len(ligS)	
+	tipoS = ''
+
+	for lin in range(len(ligS)):
+		if ligS[lin][0] == 'C' and ligS[lin][1] == 2 and ordem == 1:
+			tipoS == 's2'
+
+		elif ligS[lin][0] == 'H' and ordem == 2:
+			tipoS == 'sh'
+
+		elif ordem == 2:
+			tipoS = 'ss'
+
+		elif ordem == 3:
+			tipoS = 's4'
+
+		elif ordem == 4:
+			tipoS = 's6'
+
+	return tipoS
+
+def identificaO(inda, indm, liga, ligc):
+	#O oxigênio pode ser identificado pelo grupo funcional ao qual pertence. Construamos novamente uma matriz com as ligações do oxigênio.
+	ligO = []
+
+	for lin in (range(len(liga))):
+		for col in (range(len(liga[0]) - 1)):
+			lio = []
+			if liga[lin][col] == inda:
+				if col == 0:
+					lio.append(liga[lin][col+1])
+					lio.append(liga[lin][col+2])
+				if col == 1:
+					lio.append(liga[lin][col-1])
+					lio.append(liga[lin][col+1])
+
+				ligO.append(lio)
+
+	#Identifiquemos os ligantes
+	for lin in range(len(ligO)):
+		for lil in range(len(indm)):
+			if ligO[lin][0] == indm[lil][1]:
+				ligO[lin][0] = indm[lil][0]
+	
+	#Quantidade de ligações
+	ordem = len(ligO)
+	tipoO = ''
+	
+	if ordem == 1:
+		tipoO = 'o'
+
+	elif ordem == 2:
+		if ligO[0][0] == 'H' or ligO[1][0] == 'H':
+			tipoO = 'oh'
+		else:
+			tipoO = 'os'
+
+	return tipoO
+
+def identificaC(inda, indm, liga, ligc):
+	#O carbono pode ser identificado pelo ligante ou pela natureza da cadeia a qual pertence. Construamos novamente uma matriz com as ligações do carbono.
+	ligR = []
+
+	for lin in (range(len(liga))):
+		for col in (range(len(liga[0]) - 1)):
+			lir = []
+			if liga[lin][col] == inda:
+				if col == 0:
+					lir.append(liga[lin][col+1])
+					lir.append(liga[lin][col+2])
+				if col == 1:
+					lir.append(liga[lin][col-1])
+					lir.append(liga[lin][col+1])
+
+				ligR.append(lir)
+
+	#Identifiquemos os ligantes
+	for lin in range(len(ligR)):
+		for lil in range(len(indm)):
+			if ligR[lin][0] == indm[lil][1]:
+				ligR[lin][0] = indm[lil][0]
+
+	#Quantidade de ligações
+	ordem = len(ligR)
+	tipoC = ''
+
+	if ordem == 4 and tipoC == '':
+		tipoC = 'c3'
+
+	elif ordem == 3 and tipoC == '':
+		#Verifiquemos se o carbono está em um anel aromático
+		for lin in range(len(ligc)):
+			for col in range(len(ligc[0])):
+				tipo = ligc[lin][0]
+				if ligc[lin][col] == inda:
+					if tipo == 'A':
+						tipoC == 'ca'
+
+		for lin in range(len(ligR)):
+			if (ligR[lin][0] == 'O' or ligR[lin][0] == 'S' or ligR[lin][0] == 'o' or ligR[lin][0] == 's2') and ligR[lin][1] == 2:
+				tipoC = 'c'
+
+		if tipoC == '':
+			tipoC = 'c2'
+
+	elif ordem == 2 and tipoC == '':
+		for lin in range(len(ligR)):
+			if (ligR[lin][0] == 'O' or ligR[lin][0] == 'S' or ligR[lin][0] == 'o' or ligR[lin][0] == 's2') and ligR[lin][1] == 2:
+				tipoC = 'c'
+			else:
+				tipoC = 'c1'
+
+	return tipoC
+
+def identificaN(inda, indm, liga, ligc):				
+	#O nitrogênio é o átomo mais complicado para a identificação. Devemos tomar muito cuidado em relação aos ligantes e às ordens de ligação. Construamos mais uma vez a matriz e ligantes.
+
+	ligN = []
+
+	for lin in (range(len(liga))):
+		for col in (range(len(liga[0]) - 1)):
+			lii = []
+			if col == 0:
+				lii.append(liga[lin][col+1])
+				lii.append(liga[lin][col+2])
+			if col == 1:
+				lii.append(liga[lin][col-1])
+				lii.append(liga[lin][col+1])
+			ligN.append(lii)
+
+	#Identifiquemos os ligantes
+	for lin in range(len(ligN)):
+		for lil in range(len(indm)):
+			if ligN[lin][0] == indm[lil][1]:
+				if indm[lil][0] == 'C':
+					ligN[lin].append(ligN[lin][0]) #Guardando o índice do Carbono na terceira coluna
+
+				ligN[lin][0] = indm[lil][0]
+
+	tipoN = ''
+
+	#Quantidade de ligações
+	ordem = len(ligN)
+	ordemmax = 0
+
+	for lin in range(len(ligN)):
+		ordemmax = ordemmax + ligN[lin][1]
+
+	if ordem == 4 and tipoN == '':
+		tipoN = 'n4'
+	
+	elif ordem == 3 and tipoN == '':
+		if (ligN[0][0] == 'O' and ligN[1][0] == 'O') or (ligN[0][0] == 'O' and ligN[2][0] == 'O') or (ligN[1][0] == 'O' and ligN[2][0] == 'O'):
+			tipoN = 'no'
+
+		elif ordemmax == 4 and tipoN == '':
+			tipoN = 'na'
+
+		elif (ligN[0][0] == 'C' or ligN [1][0] == 'C' or ligN[2][0] == 'C') and tipoN == '':
+			
+			if ligN[0][0] == 'C':
+				tipoC0 = identificaC(ligN[0][2], indm, liga, ligc)
+
+
+			if ligN[1][0] == 'C':
+				tipoC1 = identificaC(ligN[1][2], indm, liga, ligc)
+	
+			if ligN[2][0] == 'C':
+				tipoC2 = identificaC(ligN[2][2], indm, liga, ligc)
+
+			if (tipoC0 == 'c' or tipoC1 == 'c' or tipoC2 == 'c') and tipoN == '':
+				tipoN = 'n'
+
+			for lin in range(len(ligc)):
+				for col in range(len(ligc)):
+					tipo = ligc[lin][0]
+					if ligN[0][0] == ligc[lin][col] or ligN[1][0] == ligc[lin][col] or ligN[2][0] == ligc[lin][col]:
+						if tipo == 'A' and tipoN == '':
+							tipoN = 'nh'
+
+						elif tipo == 'B' and tipoN == '':
+							tipoN = 'n'
+
+		elif ordemmax == 3 and tipoN == '':
+			tipoN == 'n3'
+		
+
+	elif ordem == 2 and tipoN == '':
+		if ligN[0][1] == 3 or ligN[1][1] == 3:
+			tipoN = 'n1'
+
+		elif ligN[0][1] == 2 or ligN[1][1] == 2:
+			tipoN = 'n2'
+
+	elif ordem == 1 and tipoN == '':
+		tipoN = 'n1'
+
+
+	return tipoN
+
+def calcular():
+	#A primeira coisa que devemos fazer é ler o arquivo de coordenadas
+	arqc = coordmol.get()
+
+	with open(arqc, 'r') as arquivo:
+		frases = arquivo.readlines()
+
+	#Com estes comandos copiamos todos os dados do arquivo para a variável "dados". Devemos agora separar estas informações. Separemos todos os dados em um vetor organizado por meio dos espaços no arquivo de entrada.
+
+	dados = []
+	for lin in range(len(frases)):
+		separa = frases[lin].split()
+		dados.append(separa)
+
+	del separa
+	separa = []
+	for lin in range(len(dados)):
+		for col in range(len(dados[lin])):
+			separa.append(dados[lin][col])	
+
+	del frases
+	del dados
+
+	#O primeiro dado é o número de átomos, separemos em uma variável específica
+	
+	numatom = int(separa[0])
+	del separa[0]
+
+	#Montemos agora a matriz com os tipos de átomos na primeira coluna, os índices na segunda e as coordenadas x, y e z nas colunas subsequentes
+	
+	molcoord = []
+	molind = []
+
+	for k in range(numatom):
+		lin1 = []
+		lin2  = []
+		for j in range(5):
+			if j == 0:
+				lin1.append(separa[0])
+				lin2.append(separa[0])
+			elif j == 1:
+				lin1.append(int(separa[0]))
+				lin2.append(int(separa[0]))
+			else:
+				lin1.append(float(separa[0]))
+			del separa[0]
+		molcoord.append(lin1)
+		molind.append(lin2)
+
+
+	#Guardemos agora as ligaçõe da cadeia. As ligações são organizadas em três colunas, a primeira e a segunda com os índices dos átomos envolvidos na ligação e a terceira com a ordem da ligação (simples = 1, dupla = 2, tripla = 3)
+
+	ligalif = []
+
+	if separa[0] != '[Bonds]':
+		er = Tk()
+		er.title('No bonds')
+		er1 = Text(er, heigh = 2, width = 40)
+		er1.pack()
+		er1.insert(END, 'Check your input file for the bonds entry')
+
+	elif separa[0] == '[Bonds]':
+		del separa[0]
+
+	if len(separa) != 0:	
+
+		while separa[0] != '[Angles]':
+			lin = []
+			for k in range(3):
+				lin.append(int(separa[0]))
+				del separa[0]
+			ligalif.append(lin)
+			if len(separa) == 0:
+				break
+
+	#Tratemos agora os ângulos
+	
+	ligang = []
+
+	if len(separa) != 0:
+		if separa[0] == '[Angles]':
+			del separa[0]
+
+			while len(separa) != 0 and separa[0] != '[Cicles]':
+				lin = []
+				for k in range(3):
+					lin.append(int(separa[0]))
+					del separa[0]
+				ligang.append(lin)
+				if len(separa) == 0 or separa[0] == '[Cicles]':
+					break
+
+	#Se a molécula possuir ciclos, haverá uma seção para eles que será tratada agora.
+
+	ligcyc = []
+
+	if len(separa) != 0:
+		if separa[0] == '[Cicles]':
+			del separa[0]
+
+			ncyc = int(separa[0])
+			del separa[0]
+			quantmax = 20 #Quantidade máxima de átomos por ciclo
+
+			for k in range(ncyc):
+				lin = []
+				quant = int(separa[0])
+				del separa[0]
+				lin.append(separa[0]) #Natureza do ciclo
+				del separa[0]
+
+				for j in range(quantmax):
+					if j < quant:
+						lin.append(int(separa[0]))
+						del separa[0]
+					else:
+						lin.append(0)
+
+				ligcyc.append(lin)
+
+	
+		else:
+			er = Tk()
+			er.tittle('No cicles')
+			er1 = Text(er, heigh = 2, width = 40)
+			er1.pack()
+			er1.insert(END, 'Check your input file for the cicle entry')
+
+
+	#Precisamos agora identificar cada átomo e atribuir um tipo atômico do GAFF. Para isso, verificamos átomo a átomo em relação a presença em ciclos, quantidade de ligantes e ordem das ligações que faz. A primeira coisa a se fazer é identificar o elemento químico.
+
+
+	for j in range(numatom):
+		if molcoord[j][0] == 'C':
+			tipoC = identificaC(molcoord[j][1], molind, ligalif, ligcyc)
+			molcoord[j].append(tipoC)
+
+		elif molcoord[j][0] == 'N':
+			tipoN = identificaN(molcoord[j][1], molind, ligalif, ligcyc)
+			molcoord[j].append(tipoN)
+
+		elif molcoord[j][0] == 'O':
+			tipoO = identificaO(molcoord[j][1], molind, ligalif, ligcyc)
+			molcoord[j].append(tipoO)
+
+		elif molcoord[j][0] == 'S':
+			tipoS = identificaS(molcoord[j][1], molind, ligalif, ligcyc)
+			molcoord[j].append(tipoS)
+
+		elif molcoord[j][0] == 'P':
+			tipoP = identificaP(molcoord[j][1], molind, ligalif, ligcyc)
+			molcoord[j].append(tipoP)
+
+		elif molcoord[j][0] == 'H':
+			tipoH = identificaH(molcoord[j][1], molind, ligalif, ligcyc)
+			molcoord[j].append(tipoH)
+
+		elif molcoord[j][0] == 'F':
+			tipoF = 'f'
+			molcoord[j].append(tipoF)
+
+		elif molcoord[j][0] == 'Cl':
+			tipoCl = 'cl'
+			molcoord[j].append(tipoCl)
+
+		elif molcoord[j][0] == 'Br':
+			tipoBr = 'br'
+			molcoord[j].append(tipoBr)
+
+		elif molcoord[j][0] == 'I':
+			tipoI = 'i'
+
+	
+	#Vamos escrever um arquivo para verificar se o reconhecimento atômico está correto
+
+	#saida = open('output.txt', 'w')
+	#saida.write(str(numatom))
+	#saida.write('\n')
+	
+	#for lin in range(len(molcoord)):
+	#	for col in range(len(molcoord[0])):
+	#		saida.write(str(molcoord[lin][col]))
+	#		saida.write('\t')
+	#		if col == len(molcoord[0]) - 1:
+	#			saida.write('\n')
+	#
+	#
+	#saida.close()
+
+	#Já temos agora uma matriz com os tipos de átomos assimilados a cada átomo e suas coordenadas, construamos uma mais organizada: coluna 1: tipo de átomo segundo o código simplificado; coluna 2: índice do átomo; coluna 3: coordenada x; coluna 4: coordenada y; coluna 5: coordenada z; coluna 6: carga parcial.
+
+	guia = []	
+
+	for lin in range(numatom):
+		lini = []
+		for col in range(6):
+			if col != 5:
+				lini.append(molcoord[lin][col])
+			else:
+				lini.append(float(0.000))
+		
+		guia.append(lini)
+
+	#Substituamos os tipos na primeira coluna da matriz guia
+	for lin in range(numatom):
+		guia[lin][0] = molcoord[lin][5]
+
+	#Calculemos as cargas parciais iniciais
+	cargas = calcula_cargas(guia, numatom)
+	
+	#Adicionemos as cargas a matriz guia
+	for lin in range(len(guia)):
+		guia[lin][5] = cargas[lin]
+
+	#Construamos a matriz de ligações com os devidos parâmetros procurando estes parâmetros no arquivo gaff.dat. A primeira coisa a fazer é identificar as ligações de acordo com o padrão de nomenclatura do GAFF.
+
+	with open('bonds.dat', 'r') as arquivo:
+		frases = arquivo.readlines()
+
+	dados = []
+	for lin in range(len(frases)):
+		ligacoes = frases[lin].split()
+		dados.append(ligacoes)
+
+	del ligacoes
+	ligacoes = []
+	for lin in range(len(dados)):
+		for col in range(len(dados[lin])):
+			ligacoes.append(dados[lin][col])
+
+	del frases
+	del dados
+
+	bonds = []
+	for lin in range(len(ligalif)):
+		lini = []
+		ind1 = ligalif[lin][0]
+		ind2 = ligalif[lin][1]
+
+		atom1 = guia[ind1 - 1][0]
+		atom2 = guia[ind2 - 1][0]
+		b1 = atom1 + '-' + atom2
+		b2 = atom2 + '-' + atom1
+
+	#Queremos buscar os parâmetros de ligação na matriz ligacoes
+		lini.append(b1)
+
+		for j in range(len(ligacoes)):
+			if ligacoes[j] == b1 or ligacoes[j] == b2:
+				lini.append((4.184)*float(ligacoes[j+1]))
+				lini.append(float(ligacoes[j+2]))
+				lini.append(ind1)
+				lini.append(ind2)
+		
+		bonds.append(lini)
+	
+	with open('angles.dat', 'r') as arquivo:
+		frases = arquivo.readlines()
+
+	dados = []
+	for lin in range(len(frases)):
+		angulos = frases[lin].split()
+		dados.append(angulos)
+
+	del angulos
+	angulos = []
+	for lin in range(len(dados)):
+		for col in range(len(dados[lin])):
+			angulos.append(dados[lin][col])
+
+	del frases
+	del dados
+
+	angles = []
+	for lin in range(len(ligang)):
+		lini = []
+		ind1 = ligang[lin][0]
+		ind2 = ligang[lin][1]
+		ind3 = ligang[lin][2]
+
+		atom1 = guia[ind1 - 1][0]
+		atom2 = guia[ind2 - 1][0]
+		atom3 = guia[ind3 - 1][0]
+		b1 = atom1 + '-' + atom2 + '-' + atom3
+		b2 = atom1 + '-' + atom3 + '-' + atom2
+		b3 = atom2 + '-' + atom1 + '-' + atom3
+		b4 = atom2 + '-' + atom3 + '-' + atom1
+		b5 = atom3 + '-' + atom1 + '-' + atom2
+		b6 = atom3 + '-' + atom2 + '-' + atom1
+
+	#Queremos buscar os parâmetros de ângulo na matriz angulos
+		lini.append(b1)
+
+		for j in range(len(angulos)):
+			if angulos[j] == b1 or angulos[j] == b2 or angulos [j] == b3 or angulos[j] == b4 or angulos[j] == b5 or angulos[j] == b6:
+				lini.append((4.184)*float(angulos[j+1]))
+				lini.append((np.pi/180)*float(angulos[j+2]))
+				lini.append(ind1)
+				lini.append(ind2)
+				lini.append(ind3)
+
+
+		angles.append(lini)
+
+	#Precisamos agora gerar as interações 1-4 para calcular a interação não ligada (Coulomb e VdW). Vamos gerar essa lista de interações com base na lista de ângulos
+	nonbonds = []
+	for j in range(1, numatom + 1):
+		nonbondsj = gera14(j, ligang, numatom)
+		for k in range(len(nonbondsj)):
+			nonbonds.append(nonbondsj[k])
+
+	with open('nonbond.dat', 'r') as arquivo:
+		frases = arquivo.readlines()
+
+	dados = []
+	for lin in range(len(frases)):
+		naoligacoes = frases[lin].split()
+		dados.append(naoligacoes)
+
+	del naoligacoes
+	naoligacoes = []
+	for lin in range(len(dados)):
+		for col in range(len(dados[lin])):
+			naoligacoes.append(dados[lin][col])
+
+	del frases
+	del dados
+
+	for lin in range(len(nonbonds)):
+		atom1 = nonbonds[lin][0]
+		atom2 = nonbonds[lin][1]
+
+		tipatom1 = guia[atom1-1][0]
+		tipatom2 = guia[atom2-1][0]
+
+		r1, eps1 = paramnonbond(tipatom1, naoligacoes)
+		r2, eps2 = paramnonbond(tipatom2, naoligacoes)
+	
+		r12 = (r1 + r2)/2
+		eps12 = (eps1*eps2)**(1/2)
+
+		A12 = eps12*(r12**12)
+		B12 = 2*eps12*(r12**6)
+
+		nonbonds[lin].append(A12)
+		nonbonds[lin].append(B12)
+
+	#Agora temos uma matriz com os tipos de átomos segundo o GAFF, as coordenadas e as cargas, junto com esta temos uma matriz com as ligações. Deste modo, estamos prontos para calcular a energia do sistema e minimizá-la segundo o algoritmo metropolis	
+	
+	final, dip, dipmod = min_mc(guia, bonds, angles, nonbonds, numatom)
+	conversao = 1/0.20819434
+
+	xc.set(str(round(dip[0]*conversao, 4)))
+	yc.set(str(round(dip[1]*conversao, 4)))
+	zc.set(str(round(dip[2]*conversao, 4)))
+	mod.set(str(round(dipmod*conversao, 4)))
+
+	#Montemos um arquivo xyz para observar como a molécula ficou no final
+
+	saida = open('output.xyz', 'w')
+	saida.write(str(numatom))
+	saida.write('\n\n')
+
+	for lin in range(len(molcoord)):
+		saida.write(str(final[lin][0]))
+		saida.write('\t')
+		saida.write(str(round(final[lin][1], 4)))
+		saida.write('\t')
+		saida.write(str(round(final[lin][2], 4)))
+		saida.write('\t')
+		saida.write(str(round(final[lin][3], 4)))
+		saida.write('\t')
+		saida.write(str(round(final[lin][4], 4)))
+		saida.write('\t')
+		saida.write(str(round(final[lin][5], 4)))
+		saida.write('\n')
+	
+	saida.close()
+
+#Estrutura gráfica
+mw = Tk()
+mw.title('DIPOMCALC - Dipole Moment Calculator')
+
+coordmol = StringVar()
+coordmol.set('water.xyz')
+
+altura = 10
+largura = 100
+
+Ac = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Ac.pack(expand = True, fill = 'x', side = TOP)
+Label(Ac, text = 'Molecule coordinate file:', relief = 'sunken', width = largura//2).pack(expand = False, fill = 'x', side = LEFT)
+Entry(Ac, relief = 'sunken', width = largura//2, textvariable = coordmol).pack(expand = True, fill = 'x', side = LEFT)
+
+numb = IntVar()
+numb.set(1000000)
+
+Ad = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Ad.pack(expand = True, fill = 'x', side = TOP)
+Label(Ad, text = 'Number of steps:', relief = 'sunken', width = largura//2).pack(expand = False, fill = 'x', side = LEFT)
+Entry(Ad, relief = 'sunken', width = largura//2, textvariable = numb).pack(expand = True, fil = 'x', side = LEFT)
+
+numbequil = IntVar()
+numbequil.set(1000)
+
+Ae = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Ae.pack(expand = True, fill = 'x', side = TOP)
+Label(Ae, text = 'Number of steps for equilibration:', relief = 'sunken', width = largura//2).pack(expand = False, fill = 'x', side = LEFT)
+Entry(Ae, relief = 'sunken', width = largura//2, textvariable = numbequil).pack(expand = True, fill = 'x', side = LEFT)
+
+Ab = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Ab.pack(expand = True, fill = 'x', side = TOP)
+Button(Ab, activebackground = 'white', text = 'Calculate', command = calcular, relief = 'sunken', width = largura).pack(expand = True, fill = 'x', side = TOP)
+
+Ap = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Ap.pack(expand = True, fill = 'x', side = TOP)
+Label(Ap, text = '', relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+Label(Ap, text = 'x', relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+Label(Ap, text = 'y', relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+Label(Ap, text = 'z', relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+
+xc = StringVar()
+yc = StringVar()
+zc = StringVar()
+xc.set('')
+yc.set('')
+zc.set('')
+
+
+Ar = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Ar.pack(expand = True, fill = 'x', side = TOP)
+Label(Ar, text = 'Dipole moment vector:', relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+Label(Ar, textvariable = xc, relief = 'sunken', width = largura//4, wraplength = 0).pack(expand = True, fill = 'x', side = LEFT)
+Label(Ar, textvariable = yc, relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+Label(Ar, textvariable = zc, relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+
+mod = StringVar()
+mod.set('')
+
+Am = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Am.pack(expand = True, fill = 'x', side = TOP)
+Label(Am, text = 'Dipole moment modulus:', relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+Label(Am, textvariable = mod, relief = 'sunken', width = largura//2).pack(expand = True, fill = 'x', side = LEFT)
+Label(Am, text = 'D', relief = 'sunken', width = largura//4).pack(expand = True, fill = 'x', side = LEFT)
+
+Saida = Frame(bg = 'gray', bd = 1, height = altura, relief = 'sunken')
+Saida.pack(expand = True, fill = 'x', side = BOTTOM)
+Button(Saida, activebackground = 'white', text = 'Close', command = sair, width = largura, relief = 'sunken').pack(expand = False, fill = 'x', side = BOTTOM)
+
+mainloop()
